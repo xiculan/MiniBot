@@ -44,8 +44,18 @@ int GiroAnterior = 0;
 //Configuracion de recorrido util de los motores (controlados como servo)
 int PMotoresMin = 0;
 int PMotoresMax = 160;
-int PVelCal = 0; //Calibra la salida por que el eje esta descentrado
+int PVelCal = 15; //Calibra la salida por que el eje esta descentrado
 int PGirCal = 0; //Calibrar la salida de giro
+
+//direcciones i2c
+int Ardu = 8; //Primer eclavo, encargado de los ultrasonidos
+int Master = 31;
+
+
+int numeroRecibido = 0;
+int RC = 0;
+int tiempoEspera = 10; // intervalos de 0.5 segundos de espera para retomar control automatico
+
 
 //------------------------------------------------------
 //      SALIDAS DIGITALES
@@ -117,7 +127,7 @@ int Motores(int Velocidad, int Giro){
 
 
 void Ultrasonido () {
-  Wire.requestFrom(8, 3);
+  Wire.requestFrom(Ardu, 3);
 
   while (Wire.available()) {
     
@@ -148,46 +158,90 @@ void Ultrasonido () {
 
 void setup() {
   Serial.begin(9600);
-  Wire.begin(10);
-  Wire.onRequest(EnvioDatos); //Funcion encargada del I2C
+  Wire.begin(Master);
   VelocidadMotores.attach(10);
-  GiroMotores.attach(11); 
+  GiroMotores.attach(11);
+  Wire.onReceive(receiveEvent);
 }
 
 void EnvioDatos () {
-  Wire.write(DistI);
-  Wire.write(DistM);
-  Wire.write(DistD);
+  Wire.beginTransmission(31);
+
+  // Enviar datos como bytes individuales
+  Wire.write(lowByte(DistI));
+  Wire.write(highByte(DistI));
+
+  Wire.write(lowByte(DistM));
+  Wire.write(highByte(DistM));
+
+  Wire.write(lowByte(DistD));
+  Wire.write(highByte(DistD));
+
+  Wire.endTransmission();
+}
+
+void receiveEvent() {
+  int velReciv = 0;
+  int girReciv = 0;
+  // Lee los dos bytes y reconstruye el número entero
+  velReciv = Wire.read();
+  //gelReciv = Wire.read();
+  Serial.println(velReciv);
+  Motores(velReciv, girReciv);
+  //Serial.println(girReciv);
+  RC = 1;
 }
 
 
 void loop() {
-  Ultrasonido();
+  
+  if (RC == 0){
+    Serial.print("\n\n\n\n");
+    Ultrasonido();
+    //EnvioDatos();
 
-  ///*
-  if (DistM <= DistMin) {
-      Motores(0, 0);
-    }
-  else if (DistI < DistMin){ 
-    Motores(VMin, 30);
-  }
-  else if (DistD < DistMin){
-    Motores(-VMin, -30);
-  } //*/
-  else { //Ajustamos la velocidad segun la distancia
+    ///*
     if (DistM <= DistMin) {
-      Motores(0, 0);
+        Motores(0, 0);
+      }
+    else if (DistI < DistMin){ 
+      Motores(VMin, 30);
     }
-    else if(DistM < DistMed) {
-      Motores(VMin, 0);
+    else if (DistD < DistMin){
+      Motores(-VMin, -30);
+    } //*/
+    else { //Ajustamos la velocidad segun la distancia
+      if (DistM <= DistMin) {
+        Motores(0, 0);
+      }
+      else if(DistM < DistMed) {
+        Motores(VMin, 0);
+      }
+      else if(DistM < DistMax) {
+        Motores(VMed, 0);
+      }
+      else {
+        Motores (VMax, 0);
+      }
     }
-    else if(DistM < DistMax) {
-      Motores(VMed, 0);
+  }
+  else{ 
+    RC = 0;
+    int RCDelay = tiempoEspera;
+    while (RCDelay > 0) {
+      Serial.print("Tiempo restante RC: ");
+      Serial.println(RCDelay);
+      RCDelay = RCDelay - 1;
+      delay(1000);
+      
+      if (RC == 1){
+        RCDelay = tiempoEspera;
+        RC = 0;
+      }
     }
-    else {
-      Motores (VMax, 0);
-    }
+    
+    
   }
   delay(500);
-  Serial.print("\n\n\n\n");
+  
 }
