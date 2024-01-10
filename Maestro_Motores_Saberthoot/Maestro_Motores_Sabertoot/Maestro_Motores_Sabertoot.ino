@@ -54,7 +54,7 @@ int Master = 31;
 
 int numeroRecibido = 0;
 int RC = 0;
-int tiempoEspera = 10; // intervalos de 0.5 segundos de espera para retomar control automatico
+int tiempoEspera = 20; //Segundos de espera para retomar control automatico
 
 
 //------------------------------------------------------
@@ -180,14 +180,28 @@ void EnvioDatos () {
   Wire.endTransmission();
 }
 
+int EnRango (int valor, int min, int max){
+  if (valor > max){
+    valor = max;
+  }
+  if (valor < min){
+    valor = min;
+  }
+  return valor;
+}
+
 void receiveEvent() {
   int velReciv = 0;
   int girReciv = 0;
   // Lee los dos bytes y reconstruye el número entero
   velReciv = Wire.read();
   //gelReciv = Wire.read();
+
+  velReciv = EnRango(velReciv, -100, 100);
   Serial.println(velReciv);
   Motores(velReciv, girReciv);
+  delay(500);
+  Motores(0, 0);
   //Serial.println(girReciv);
   RC = 1;
 }
