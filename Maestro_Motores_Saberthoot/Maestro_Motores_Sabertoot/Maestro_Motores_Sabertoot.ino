@@ -3,6 +3,10 @@
 #include "Wire.h"
 #include <Servo.h>
 
+String inputString = "";
+bool stringComplete = false;
+
+
 //------------------------------------------------------
 //      CONFIGURACIONES
 //------------------------------------------------------
@@ -17,8 +21,8 @@ int DistMax = 50;
 
 
 //Velocidad minima, media y maxima para el movimiento
-int VMin = 10;
-int VMed = 30;
+int VMin = 20;
+int VMed = 35;
 int VMax = 50;
 
 
@@ -44,8 +48,9 @@ int GiroAnterior = 0;
 //Configuracion de recorrido util de los motores (controlados como servo)
 int PMotoresMin = 0;
 int PMotoresMax = 160;
-int PVelCal = 15; //Calibra la salida por que el eje esta descentrado
+int PVelCal = 3; //Calibra la salida por que el eje esta descentrado
 int PGirCal = 0; //Calibrar la salida de giro
+int ejeMotor = 85; // Arreglar aqui <==============================================================
 
 //direcciones i2c
 int Ardu = 8; //Primer eclavo, encargado de los ultrasonidos
@@ -54,7 +59,7 @@ int Master = 31;
 
 int numeroRecibido = 0;
 int RC = 0;
-int tiempoEspera = 20; //Segundos de espera para retomar control automatico
+int tiempoEspera = 3; //Segundos de espera para retomar control automatico
 
 
 //------------------------------------------------------
@@ -64,6 +69,8 @@ int tiempoEspera = 20; //Segundos de espera para retomar control automatico
 // Definimos los pines de los motores
 Servo VelocidadMotores;
 Servo GiroMotores;
+
+
 
 
 /*
@@ -82,9 +89,9 @@ int Motores(int Velocidad, int Giro){
   SalidaVel = SalidaVel + PVelCal; //Correccion sobre el eje de la velocidad
   int SalidaGir = map(Giro, -100, 100, PMotoresMin, PMotoresMax);
   SalidaGir = SalidaGir + PGirCal; //Correccion sobre el eje del giro
-
   if (Velocidad == 0){
-    VelocidadMotores.write(60);
+    VelocidadMotores.write(ejeMotor);
+    SalidaVel = ejeMotor;
   }
   else{
     VelocidadMotores.write(SalidaVel);
@@ -190,18 +197,30 @@ int EnRango (int valor, int min, int max){
   return valor;
 }
 
-void receiveEvent() {
-  int velReciv = 0;
-  int girReciv = 0;
-  // Lee los dos bytes y reconstruye el número entero
-  velReciv = Wire.read();
-  //gelReciv = Wire.read();
-
-  velReciv = EnRango(velReciv, -100, 100);
-  Serial.println(velReciv);
-  Motores(velReciv, girReciv);
-  delay(500);
-  Motores(0, 0);
+void receiveEvent( int howMany) {
+  inputString = "";
+  while(Wire.available()>0) // Mientras tengamos caracteres en el buffer
+  {
+    char inChar = (char)Wire.read();
+    if (inChar == '\n') {
+      stringComplete = true;
+    }
+    else{
+      inputString += inChar;
+      
+    }
+  }
+  if (stringComplete) {
+    inputString.remove(0,1);
+  }
+  Serial.println(inputString);
+  if (inputString == "w"){
+    Motores(30,0);
+  }
+  else if (inputString == "s"){
+    Motores(-30,0);
+  }
+  
   //Serial.println(girReciv);
   RC = 1;
 }
@@ -247,10 +266,11 @@ void loop() {
       Serial.println(RCDelay);
       RCDelay = RCDelay - 1;
       delay(1000);
-      
+      Motores(0, 0);
       if (RC == 1){
         RCDelay = tiempoEspera;
         RC = 0;
+        
       }
     }
     
