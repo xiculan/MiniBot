@@ -25,6 +25,19 @@ int VMin = 20;
 int VMed = 35;
 int VMax = 50;
 
+//Configuracion de recorrido util de los motores (controlados como servo)
+int PMotoresMin = 0;
+int PMotoresMax = 160;
+int PVelCal = 3; //Calibra la salida por que el eje esta descentrado
+int PGirCal = 7; //Calibrar la salida de giro
+int ejeMotor = 85; 
+
+//direcciones i2c
+int Ardu = 8; //Primer eclavo, encargado de los ultrasonidos
+int Master = 31;
+
+//Segundos de espera para retomar control automatico
+int tiempoEspera = 20; 
 
 //------------------------------------------------------
 //      OTRAS VARIABLES
@@ -45,22 +58,8 @@ int DistD;   //Distancia ultrasonido medio
 int VelocidadAnterior = 0;
 int GiroAnterior = 0;
 
-//Configuracion de recorrido util de los motores (controlados como servo)
-int PMotoresMin = 0;
-int PMotoresMax = 160;
-int PVelCal = 3; //Calibra la salida por que el eje esta descentrado
-int PGirCal = 0; //Calibrar la salida de giro
-int ejeMotor = 85; // Arreglar aqui <==============================================================
-
-//direcciones i2c
-int Ardu = 8; //Primer eclavo, encargado de los ultrasonidos
-int Master = 31;
-
-
 int numeroRecibido = 0;
 int RC = 0;
-int tiempoEspera = 3; //Segundos de espera para retomar control automatico
-
 
 //------------------------------------------------------
 //      SALIDAS DIGITALES
@@ -220,6 +219,15 @@ void receiveEvent( int howMany) {
   else if (inputString == "s"){
     Motores(-30,0);
   }
+  else if (inputString == "d"){
+    Motores(0,30);
+  }
+  else if (inputString == "a"){
+    Motores(0,-30);
+  }
+  else if (inputString == "0"){
+    Motores(0,0);
+  }
   
   //Serial.println(girReciv);
   RC = 1;
@@ -266,7 +274,6 @@ void loop() {
       Serial.println(RCDelay);
       RCDelay = RCDelay - 1;
       delay(1000);
-      Motores(0, 0);
       if (RC == 1){
         RCDelay = tiempoEspera;
         RC = 0;

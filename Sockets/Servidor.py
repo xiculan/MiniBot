@@ -34,30 +34,43 @@ def envio_arduino (dato):
     return
 data = ""
 #emprezamos un bucle infinito
-while data != "q":
+while True:
 
     # Recibe datos del cliente
-    datos_recibidos = conexion.recv(1024)
+    try:
+        datos_recibidos = conexion.recv(1024)
+    except:
+        print("Conexion perdida. Esperando nueva conexion")
+        conexion, addr = mi_socket.accept() #Aqui se aceptan las conexiones
+        print ("Reconectando a: ")
+        print (addr)
+        datos_recibidos = conexion.recv(1024)
 
-    # Verifica si se recibieron datos
-    if not datos_recibidos:
-        print("El cliente ha cerrado la conexión.")
-        break
 
     # Muestra los datos recibidos por pantalla
     data = datos_recibidos.decode('utf-8')
-    print (data)
     if (data == "w"):
         print("Adelante")
         comando = "w\n".encode()
         envio_arduino(comando)
-
     elif (data == "s"):
         print("Atras")
         comando = "s\n".encode()
         envio_arduino(comando)
+    elif (data == "d"):
+        print("Derecha")
+        comando = "d\n".encode()
+        envio_arduino(comando)
+    elif (data == "a"):
+        print("Izquierda")
+        comando = "a\n".encode()
+        envio_arduino(comando)
+    elif (data == "-w" or data == "-s" or data == "-a" or data == "-d"):
+        print("fin movimiento")
+        comando = "0\n".encode()
+        envio_arduino(comando)
     print()
 
+
+
 conexion.close() #Cerramos la conexion
-
-
