@@ -15,7 +15,7 @@ Arduino esclavo == Arduino nano
 //------------------------------------------------------
 
 //Referido al error maximo y los intentos a realizar en mediciones en la funcion  comprovador_error_ultrasons()
-int errorMax = 30; //esta variable es %
+int errorMax = 100; //esta variable es %
 int intentos = 3;
 
 //------------------------------------------------------
@@ -87,9 +87,8 @@ int comprovador_error_ultrasons (int Dist1, int Dist2, int Dist3, int sensor){
   }
   int error = (errorMax * media) / 100;
   
-  //informe(Dist1, Dist2, Dist3, sensor); //comentar para desactivar informe   <============================================ESTA AQUI EL INFORME
   if (sensor == 1){
-    if ((calc > error) && (contadorIntentosI < intentos)){
+    if ((calc > error) && (contadorIntentosI < intentos) && (Dist1 > 30)){
       informe(Dist1, Dist2, Dist3, sensor, media, Dist1, error);
       contadorIntentosI = contadorIntentosI + 1;
       return Dist2;
@@ -102,7 +101,7 @@ int comprovador_error_ultrasons (int Dist1, int Dist2, int Dist3, int sensor){
   }
 
   else if (sensor == 2){
-    if ((calc > error) && (contadorIntentosM < intentos)){
+    if ((calc > error) && (contadorIntentosM < intentos) && (Dist1 > 30)){
       informe(Dist1, Dist2, Dist3, sensor, media, Dist1, error);
       contadorIntentosM = contadorIntentosM + 1;
       return Dist2;
@@ -115,7 +114,7 @@ int comprovador_error_ultrasons (int Dist1, int Dist2, int Dist3, int sensor){
   }
 
   else if (sensor == 3){
-    if ((calc > error) && (contadorIntentosD < intentos)){
+    if ((calc > error) && (contadorIntentosD < intentos) && (Dist1 > 30)){
       informe(Dist1, Dist2, Dist3, sensor, media, Dist1, error);
       contadorIntentosD = contadorIntentosD + 1;
       return Dist2;
@@ -129,7 +128,7 @@ int comprovador_error_ultrasons (int Dist1, int Dist2, int Dist3, int sensor){
   
 }
 int informe (int Valor1, int Valor2, int Valor3, int sensor, int media, int eliminado, int margen){
-  return;
+  return; //Comentar aqui para desactivar informa <========================================================= INFORME AQUI
   if (sensor == 1){
     Serial.print("Ultrasonido Izc// ");
   }
@@ -160,6 +159,7 @@ int informe (int Valor1, int Valor2, int Valor3, int sensor, int media, int elim
   else{
     Serial.println(media);
   }
+  
 }
 void loop() {
   DistI2 = DistI1;
@@ -222,7 +222,8 @@ valor_corretgit=valor_corretgit/contador
   */
 
 
-  delay(500);
+  delay(300);
+  //Serial.println(); //Diferencia entre salidas
 
   /*
   Serial.println("=============================================================");

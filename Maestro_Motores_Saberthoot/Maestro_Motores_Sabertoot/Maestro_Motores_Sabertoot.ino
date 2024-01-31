@@ -15,10 +15,9 @@ bool stringComplete = false;
 int Margen_US = 5;
 
 //Distancia minima, media y maxima a tener en cuenta para la navegacion
-int DistMin = 10;
-int DistMed = 30;
-int DistMax = 50;
-
+int DistMin = 20;
+int DistMed = 60;
+int DistMax = 100;
 
 //Velocidad minima, media y maxima para el movimiento
 int VMin = 17;
@@ -29,7 +28,7 @@ int VMax = 23;
 int PMotoresMin = 0;
 int PMotoresMax = 160;
 int PVelCal = 3; //Calibra la salida por que el eje esta descentrado
-int PGirCal = 7; //Calibrar la salida de giro
+int PGirCal = 13; //Calibrar la salida de giro
 int ejeMotor = 85; 
 
 //direcciones i2c
@@ -37,7 +36,7 @@ int Ardu = 8; //Primer eclavo, encargado de los ultrasonidos
 int Master = 31;
 
 //Segundos de espera para retomar control automatico
-int tiempoEspera = 20; 
+int tiempoEspera = 20;  // Ya no sirve <==================================
 
 //------------------------------------------------------
 //      OTRAS VARIABLES
@@ -245,22 +244,30 @@ void receiveEvent( int howMany) {
 
 
 void loop() {
-  
+  Ultrasonido();
   if (RC == 0){
     Serial.print("\n\n\n\n");
-    Ultrasonido();
     //EnvioDatos();
 
     ///*
     if (DistM <= DistMin) {
-        Motores(0, 0);
+      Motores(0, 0);
+      /* Pruebas de navegacion aqui <================================
+      Motores(-VMin, 0);
+      delay(500);
+      if (DistI > DistD){ 
+        Motores(-VMin, 30);
       }
-    else if (DistI < DistMin){ 
-      Motores(-VMin, 30);
+      else {
+        Motores(VMin, -30);
+      } */
     }
-    else if (DistD < DistMin){
-      Motores(VMin, -30);
-    } //*/
+    else if (DistI < (DistMin /2)){ 
+      Motores(0, -30);
+    }
+    else if (DistD < (DistMin /2)){
+      Motores(0, 30);
+    }
     else { //Ajustamos la velocidad segun la distancia
       if (DistM <= DistMin) {
         Motores(0, 0);
@@ -276,21 +283,12 @@ void loop() {
       }
     }
   }
-  //Aqui llace la memoria del antiguo contador para desactivar el modo RC
-  /*else{ 
-    RC = 0;
-    int RCDelay = tiempoEspera;
-    while (RCDelay > 0) {
-      Serial.print("Tiempo restante RC: ");
-      Serial.println(RCDelay);
-      RCDelay = RCDelay - 1;
-      delay(1000);
-      if (RC == 1){
-        RCDelay = tiempoEspera;
-        RC = 0;  
-      }
-    } 
-  }*/
-  delay(500);
+  else{ 
+    Serial.println("entro");
+    if (DistI <= DistMin || DistM <= DistMin || DistD <= DistMin){
+      Motores(0,0);
+    }
+  }
+  delay(300);
   
 }
