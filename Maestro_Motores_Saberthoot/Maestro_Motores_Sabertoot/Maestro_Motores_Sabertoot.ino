@@ -21,9 +21,9 @@ int DistMax = 50;
 
 
 //Velocidad minima, media y maxima para el movimiento
-int VMin = 20;
-int VMed = 35;
-int VMax = 50;
+int VMin = 17;
+int VMed = 20;
+int VMax = 23;
 
 //Configuracion de recorrido util de los motores (controlados como servo)
 int PMotoresMin = 0;
@@ -168,6 +168,7 @@ void setup() {
   VelocidadMotores.attach(10);
   GiroMotores.attach(11);
   Wire.onReceive(receiveEvent);
+  delay(5000);
 }
 
 void EnvioDatos () {
@@ -214,23 +215,32 @@ void receiveEvent( int howMany) {
   }
   Serial.println(inputString);
   if (inputString == "w"){
-    Motores(30,0);
+    Motores(VMax,0);
+    RC = 1;
   }
   else if (inputString == "s"){
-    Motores(-30,0);
+    Motores(-VMax,0);
+    RC = 1;
   }
   else if (inputString == "d"){
-    Motores(0,30);
+    Motores(0,VMax);
+    RC = 1;
   }
   else if (inputString == "a"){
-    Motores(0,-30);
+    Motores(0,-VMax);
+    RC = 1;
   }
   else if (inputString == "0"){
     Motores(0,0);
+    RC = 1;
+  }
+  else if (inputString == "fin"){
+    Motores(0,0);
+    RC = 0;
   }
   
   //Serial.println(girReciv);
-  RC = 1;
+  
 }
 
 
@@ -246,10 +256,10 @@ void loop() {
         Motores(0, 0);
       }
     else if (DistI < DistMin){ 
-      Motores(VMin, 30);
+      Motores(-VMin, 30);
     }
     else if (DistD < DistMin){
-      Motores(-VMin, -30);
+      Motores(VMin, -30);
     } //*/
     else { //Ajustamos la velocidad segun la distancia
       if (DistM <= DistMin) {
@@ -266,7 +276,8 @@ void loop() {
       }
     }
   }
-  else{ 
+  //Aqui llace la memoria del antiguo contador para desactivar el modo RC
+  /*else{ 
     RC = 0;
     int RCDelay = tiempoEspera;
     while (RCDelay > 0) {
@@ -276,13 +287,10 @@ void loop() {
       delay(1000);
       if (RC == 1){
         RCDelay = tiempoEspera;
-        RC = 0;
-        
+        RC = 0;  
       }
-    }
-    
-    
-  }
+    } 
+  }*/
   delay(500);
   
 }
