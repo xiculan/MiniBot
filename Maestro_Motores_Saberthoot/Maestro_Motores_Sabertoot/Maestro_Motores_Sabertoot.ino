@@ -35,9 +35,6 @@ int ejeMotor = 85;
 int Ardu = 8; //Primer eclavo, encargado de los ultrasonidos
 int Master = 31;
 
-//Segundos de espera para retomar control automatico
-int tiempoEspera = 20;  // Ya no sirve <==================================
-
 //------------------------------------------------------
 //      OTRAS VARIABLES
 //------------------------------------------------------
@@ -69,8 +66,6 @@ Servo VelocidadMotores;
 Servo GiroMotores;
 
 
-
-
 /*
 Modulo de control de los motores:
 Este controla la velocidad de los motores a izquierda y derecha.
@@ -81,7 +76,6 @@ Cambiando Pmin y Pmax se ajusta el recorrido util de la potencia del motor
 */
 
 int Motores(int Velocidad, int Giro){
-
   
   int SalidaVel = map(Velocidad, -100, 100, PMotoresMin, PMotoresMax);
   SalidaVel = SalidaVel + PVelCal; //Correccion sobre el eje de la velocidad
@@ -167,21 +161,18 @@ void setup() {
   VelocidadMotores.attach(10);
   GiroMotores.attach(11);
   Wire.onReceive(receiveEvent);
+  Wire.onRequest(EnvioDatos)
   delay(5000);
 }
 
 void EnvioDatos () {
   Wire.beginTransmission(31);
 
-  // Enviar datos como bytes individuales
-  Wire.write(lowByte(DistI));
-  Wire.write(highByte(DistI));
+  Wire.write(DistI);
 
-  Wire.write(lowByte(DistM));
-  Wire.write(highByte(DistM));
+  Wire.write(DistM);
 
-  Wire.write(lowByte(DistD));
-  Wire.write(highByte(DistD));
+  Wire.write(gDistD);
 
   Wire.endTransmission();
 }
@@ -195,7 +186,7 @@ int EnRango (int valor, int min, int max){
   }
   return valor;
 }
-
+// Aqui se reciven datos desde la raspberry
 void receiveEvent( int howMany) {
   inputString = "";
   while(Wire.available()>0) // Mientras tengamos caracteres en el buffer
