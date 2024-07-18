@@ -1,4 +1,3 @@
-## Librerias
 import socket
 import time
 from smbus2 import SMBus
@@ -31,11 +30,20 @@ def enviar_mensaje(mensaje):
 def envio_arduino(dato):
     try:
         with SMBus(1) as bus:
-            bus.write_i2c_block_data(Arduino, 0, dato)
+            bus.write_i2c_block_data(Arduino, 0, list(dato))
     except Exception as e:
         print(e)
         enviar_mensaje(str(e))  # Enviar el error como mensaje
     return
+
+def leer_arduino():
+    try:
+        with SMBus(1) as bus:
+            data = bus.read_i2c_block_data(Arduino, 0, 3)  # Lee 3 bytes de datos
+            return data
+    except Exception as e:
+        print(e)
+        return None
 
 data = ""
 # Empezamos un bucle infinito
@@ -68,7 +76,7 @@ while True:
     elif data in ["a", "Key.right"]:
         mensaje = "Izquierda"
         comando = "a\n".encode()
-    elif data in ["-w", "-s", "-a", "-d", "-Key.up", "-Key.down", "-Key.left", >
+    elif data in ["-w", "-s", "-a", "-d", "-Key.up", "-Key.down", "-Key.left", "-Key.right"]:
         mensaje = "Fin movimiento"
         comando = "0\n".encode()
     else:
@@ -82,5 +90,12 @@ while True:
     if mensaje is not None:
         enviar_mensaje(mensaje)
         print(mensaje + "\n")
+    
+    # Leer datos de Arduino y mostrarlos por pantalla
+    arduino_data = leer_arduino()
+    if arduino_data:
+        dist_i, dist_m, dist_d = arduino_data
+        print(f"Distancias desde Arduino: Izquierda={dist_i} cm, Medio={dist_m} cm, Derecha={dist_d} cm")
+        enviar_mensaje(f"Distancias: Izquierda={dist_i} cm, Medio={dist_m} cm, Derecha={dist_d} cm")
 
 conexion.close()  # Cerramos la conexión

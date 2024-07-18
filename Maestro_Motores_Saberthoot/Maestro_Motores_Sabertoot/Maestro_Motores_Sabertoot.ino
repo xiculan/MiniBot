@@ -1,11 +1,9 @@
-//Librerias
 #include "SR04.h"
 #include "Wire.h"
 #include <Servo.h>
 
 String inputString = "";
 bool stringComplete = false;
-
 
 //------------------------------------------------------
 //      CONFIGURACIONES
@@ -29,21 +27,20 @@ int PMotoresMin = 0;
 int PMotoresMax = 160;
 int PVelCal = 3; //Calibra la salida por que el eje esta descentrado
 int PGirCal = 13; //Calibrar la salida de giro
-int ejeMotor = 85; 
+int ejeMotor = 85;
 
 //direcciones i2c
-int Ardu = 8; //Primer eclavo, encargado de los ultrasonidos
+int Ardu = 8; //Primer esclavo, encargado de los ultrasonidos
 int Master = 31;
 
 //------------------------------------------------------
 //      OTRAS VARIABLES
 //------------------------------------------------------
 
-//Valores por defecto vara variables de la funcion Ultrasonido()
+//Valores por defecto para variables de la función Ultrasonido()
 int DistI_Anterior = 0;
 int DistM_Anterior = 0;
 int DistD_Anterior = 0;
-
 
 //Variables SOLO ENTRADA de datos de ultrasonido (no modificar valores en programa)
 int DistI;   //Distancia Ultrasonido izquierdo
@@ -65,7 +62,6 @@ int RC = 0;
 Servo VelocidadMotores;
 Servo GiroMotores;
 
-
 /*
 Modulo de control de los motores:
 Este controla la velocidad de los motores a izquierda y derecha.
@@ -75,8 +71,7 @@ Se encarga del calculo para conseguir que los motores funcionen correctamente
 Cambiando Pmin y Pmax se ajusta el recorrido util de la potencia del motor
 */
 
-int Motores(int Velocidad, int Giro){
-  
+void Motores(int Velocidad, int Giro){
   int SalidaVel = map(Velocidad, -100, 100, PMotoresMin, PMotoresMax);
   SalidaVel = SalidaVel + PVelCal; //Correccion sobre el eje de la velocidad
   int SalidaGir = map(Giro, -100, 100, PMotoresMin, PMotoresMax);
@@ -88,11 +83,9 @@ int Motores(int Velocidad, int Giro){
   else{
     VelocidadMotores.write(SalidaVel);
   }
-  
   GiroMotores.write(SalidaGir);
 
-  //----------------------------------------------------------------------------
-  //SALIDA POR PANTALLA /*
+  //SALIDA POR PANTALLA
   if (Velocidad != VelocidadAnterior || Giro != GiroAnterior || true){
     VelocidadAnterior = Velocidad;
     GiroAnterior = Giro;   
@@ -107,51 +100,39 @@ int Motores(int Velocidad, int Giro){
     Serial.print("%/");
     Serial.println(SalidaGir);
 
-
     Serial.println("****************************************");
-      Serial.print("Modulo_US// ");
-      Serial.print("   US izc: "); 
-      Serial.print(DistI);
-      Serial.print("cm");
-      Serial.print(" ---- US Med: ");
-      Serial.print(DistM);
-      Serial.print("cm");
-      Serial.print(" ---- US Der: ");
-      Serial.print(DistD);
-      Serial.println("cm  ");
-  } //*/  
-  //----------------------------------------------------------------------------
-
+    Serial.print("Modulo_US// ");
+    Serial.print("   US izc: "); 
+    Serial.print(DistI);
+    Serial.print("cm");
+    Serial.print(" ---- US Med: ");
+    Serial.print(DistM);
+    Serial.print("cm");
+    Serial.print(" ---- US Der: ");
+    Serial.print(DistD);
+    Serial.println("cm  ");
+  } 
 }
-
 
 void Ultrasonido () {
   Wire.requestFrom(Ardu, 3);
 
-  while (Wire.available()) {
-    
-    //Aqui se reciven los datos de las mediciones
+  if (Wire.available() >= 3) {
+    //Aqui se reciben los datos de las mediciones
     DistI = Wire.read();
     DistM = Wire.read();
     DistD = Wire.read();
 
-
-    int Marjen1 = DistI_Anterior - DistI;
-    int Marjen2 = DistM_Anterior - DistM;
-    int Marjen3 = DistD_Anterior - DistD;
+    int Marjen1 = abs(DistI_Anterior - DistI);
+    int Marjen2 = abs(DistM_Anterior - DistM);
+    int Marjen3 = abs(DistD_Anterior - DistD);
     
-    if (Marjen1 < 0) {
-      Marjen1 = 0 - Marjen1;
-    }
-    if (Marjen2 < 0) {
-      Marjen2 = 0 - Marjen2;
-    }
-    if (Marjen3 < 0) {
-      Marjen3 = 0 - Marjen3;
-    }
     if ((Margen_US < Marjen1) || (Margen_US < Marjen2) || (Margen_US < Marjen3)){
-      
+      // Realiza alguna acción si el margen es superado
     }
+    DistI_Anterior = DistI;
+    DistM_Anterior = DistM;
+    DistD_Anterior = DistD;
   }
 }
 
@@ -161,23 +142,17 @@ void setup() {
   VelocidadMotores.attach(10);
   GiroMotores.attach(11);
   Wire.onReceive(receiveEvent);
-  Wire.onRequest(EnvioDatos)
+  Wire.onRequest(EnvioDatos);
   delay(5000);
 }
 
-void EnvioDatos () {
-  Wire.beginTransmission(31);
-
+void EnvioDatos() {
   Wire.write(DistI);
-
   Wire.write(DistM);
-
-  Wire.write(gDistD);
-
-  Wire.endTransmission();
+  Wire.write(DistD);
 }
 
-int EnRango (int valor, int min, int max){
+int EnRango(int valor, int min, int max){
   if (valor > max){
     valor = max;
   }
@@ -186,100 +161,82 @@ int EnRango (int valor, int min, int max){
   }
   return valor;
 }
-// Aqui se reciven datos desde la raspberry
-void receiveEvent( int howMany) {
+
+// Aquí se reciben datos desde la Raspberry
+void receiveEvent(int howMany) {
   inputString = "";
-  while(Wire.available()>0) // Mientras tengamos caracteres en el buffer
-  {
+  while(Wire.available() > 0) { // Mientras tengamos caracteres en el buffer
     char inChar = (char)Wire.read();
     if (inChar == '\n') {
       stringComplete = true;
     }
-    else{
+    else {
       inputString += inChar;
-      
     }
   }
   if (stringComplete) {
     inputString.remove(0,1);
+    Serial.println(inputString);
+    if (inputString == "w") {
+      Motores(VMax, 0);
+      RC = 1;
+    }
+    else if (inputString == "s") {
+      Motores(-VMax, 0);
+      RC = 1;
+    }
+    else if (inputString == "d") {
+      Motores(0, VMax);
+      RC = 1;
+    }
+    else if (inputString == "a") {
+      Motores(0, -VMax);
+      RC = 1;
+    }
+    else if (inputString == "0") {
+      Motores(0, 0);
+      RC = 1;
+    }
+    else if (inputString == "fin") {
+      Motores(0, 0);
+      RC = 0;
+    }
   }
-  Serial.println(inputString);
-  if (inputString == "w"){
-    Motores(VMax,0);
-    RC = 1;
-  }
-  else if (inputString == "s"){
-    Motores(-VMax,0);
-    RC = 1;
-  }
-  else if (inputString == "d"){
-    Motores(0,VMax);
-    RC = 1;
-  }
-  else if (inputString == "a"){
-    Motores(0,-VMax);
-    RC = 1;
-  }
-  else if (inputString == "0"){
-    Motores(0,0);
-    RC = 1;
-  }
-  else if (inputString == "fin"){
-    Motores(0,0);
-    RC = 0;
-  }
-  
-  //Serial.println(girReciv);
-  
 }
-
 
 void loop() {
   Ultrasonido();
   if (RC == 0){
     Serial.print("\n\n\n\n");
-    //EnvioDatos();
-
-    ///*
     if (DistM <= DistMin) {
       Motores(0, 0);
-      /* Pruebas de navegacion aqui <================================
-      Motores(-VMin, 0);
-      delay(500);
-      if (DistI > DistD){ 
-        Motores(-VMin, 30);
-      }
-      else {
-        Motores(VMin, -30);
-      } */
     }
-    else if (DistI < (DistMin /2)){ 
+    else if (DistI < (DistMin / 2)){ 
       Motores(0, -30);
     }
-    else if (DistD < (DistMin /2)){
+    else if (DistD < (DistMin / 2)){
       Motores(0, 30);
     }
-    else { //Ajustamos la velocidad segun la distancia
+    else { //Ajustamos la velocidad según la distancia
       if (DistM <= DistMin) {
         Motores(0, 0);
       }
-      else if(DistM < DistMed) {
+      else if (DistM < DistMed) {
         Motores(VMin, 0);
       }
-      else if(DistM < DistMax) {
+      else if (DistM < DistMax) {
         Motores(VMed, 0);
       }
       else {
-        Motores (VMax, 0);
+        Motores(VMax, 0);
       }
     }
   }
-  else{ 
+  else { 
     Serial.println("entro");
     if (DistI <= DistMin || DistM <= DistMin || DistD <= DistMin){
-      Motores(0,0);
+      Motores(0, 0);
     }
   }
   delay(300);
-  
 }
